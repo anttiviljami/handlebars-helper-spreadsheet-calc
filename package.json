@@ -1,0 +1,43 @@
+{
+  "name": "handlebars-helper-spreadsheet-calc",
+  "description": "Handlebars helper to run spreadsheet-style formulas",
+  "version": "0.0.1",
+  "author": "Viljami Kuosmanen <viljami@viljami.io>",
+  "license": "MIT",
+  "keywords": [
+    "mock",
+    "json schema",
+    "json",
+    "schema",
+    "example",
+    "instantiate",
+    "swagger",
+    "openapi",
+    "typescript"
+  ],
+  "homepage": "https://github.com/anttiviljami/handlebars-helper-spreadsheet-calc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anttiviljami/handlebars-helper-spreadsheet-calc.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anttiviljami/handlebars-helper-spreadsheet-calc/issues"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "dependencies": {
+    "expr-eval": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "handlebars": "^4.7.8",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch-build": "tsc -w",
+    "prepare": "npm run build",
+    "test": "vitest"
+  }
+}

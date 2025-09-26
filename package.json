@@ -1,7 +1,7 @@
 {
   "name": "handlebars-helper-spreadsheet-calc",
   "description": "Handlebars helper to run spreadsheet-style formulas",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Viljami Kuosmanen <viljami@viljami.io>",
   "license": "MIT",
   "keywords": [

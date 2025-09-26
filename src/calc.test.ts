@@ -1,5 +1,5 @@
 import Handlebars from 'handlebars';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import calc from './calc';
 
 Handlebars.registerHelper('calc', calc);
@@ -214,17 +214,19 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         const result = template({
           a: '1.234,56',
           b: '2 345,67',
-          c: '3.456,78'
+          c: '3.456,78',
         });
         expect(result).toBe('7037.01');
       });
 
       it('should work with AVERAGE function', () => {
-        const template = Handlebars.compile('{{calc "AVERAGE(price1, price2, price3)"}}');
+        const template = Handlebars.compile(
+          '{{calc "AVERAGE(price1, price2, price3)"}}',
+        );
         const result = template({
           price1: '100,50',
           price2: '200,75',
-          price3: '150,25'
+          price3: '150,25',
         });
         expect(result).toBe('150.5');
       });
@@ -234,7 +236,7 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         const result = template({
           val1: '1.234,56',
           val2: '2 345,67',
-          val3: '1.000,00'
+          val3: '1.000,00',
         });
         expect(result).toBe('2345.67');
       });
@@ -262,39 +264,50 @@ describe('handlebars-helper-spreadsheet-calc', () => {
 
     describe('nested variables', () => {
       it('should handle international numbers in nested object properties', () => {
-        const template = Handlebars.compile('{{#with product}}{{calc "price * quantity"}}{{/with}}');
+        const template = Handlebars.compile(
+          '{{#with product}}{{calc "price * quantity"}}{{/with}}',
+        );
         const result = template({
           product: {
             price: '1.299,99',
-            quantity: 3
-          }
+            quantity: 3,
+          },
         });
         expect(parseFloat(result)).toBeCloseTo(3899.97, 2);
       });
 
       it('should handle deeply nested international numbers', () => {
-        const template = Handlebars.compile('{{calc "order.items[0].price + order.items[0].tax"}}');
+        const template = Handlebars.compile(
+          '{{calc "order.items[0].price + order.items[0].tax"}}',
+        );
         const result = template({
           order: {
-            items: [{
-              price: '2.450,80',
-              tax: '490,16'
-            }]
-          }
+            items: [
+              {
+                price: '2.450,80',
+                tax: '490,16',
+              },
+            ],
+          },
         });
         expect(parseFloat(result)).toBeCloseTo(2940.96, 2);
       });
 
       it('should handle international numbers with each helper', () => {
-        const template = Handlebars.compile('{{#each items}}{{calc "price * qty"}},{{/each}}');
+        const template = Handlebars.compile(
+          '{{#each items}}{{calc "price * qty"}},{{/each}}',
+        );
         const result = template({
           items: [
             { price: '10,50', qty: 2 },
             { price: '25,75', qty: 1 },
-            { price: '1.500,00', qty: 3 }
-          ]
+            { price: '1.500,00', qty: 3 },
+          ],
         });
-        const values = result.split(',').filter(v => v).map(v => parseFloat(v));
+        const values = result
+          .split(',')
+          .filter((v) => v)
+          .map((v) => parseFloat(v));
         expect(values[0]).toBeCloseTo(21, 1);
         expect(values[1]).toBeCloseTo(25.75, 2);
         expect(values[2]).toBeCloseTo(4500, 1);
@@ -303,25 +316,29 @@ describe('handlebars-helper-spreadsheet-calc', () => {
       it('should handle international numbers in array access', () => {
         const template = Handlebars.compile('{{calc "prices[0] + prices[1]"}}');
         const result = template({
-          prices: ['1.234,56', '2.345,67']
+          prices: ['1.234,56', '2.345,67'],
         });
         expect(parseFloat(result)).toBeCloseTo(3580.23, 2);
       });
 
       it('should handle mixed nested and flat international numbers', () => {
-        const template = Handlebars.compile('{{calc "basePrice + order.shipping + order.tax"}}');
+        const template = Handlebars.compile(
+          '{{calc "basePrice + order.shipping + order.tax"}}',
+        );
         const result = template({
           basePrice: '1.000,00',
           order: {
             shipping: '150,50',
-            tax: '200,10'
-          }
+            tax: '200,10',
+          },
         });
         expect(parseFloat(result)).toBeCloseTo(1350.6, 2);
       });
 
       it('should handle international numbers with complex handlebars expressions', () => {
-        const template = Handlebars.compile('{{#if (calc "product.price > 1000")}}expensive{{else}}affordable{{/if}}');
+        const template = Handlebars.compile(
+          '{{#if (calc "product.price > 1000")}}expensive{{else}}affordable{{/if}}',
+        );
         const result1 = template({ product: { price: '1.500,00' } });
         const result2 = template({ product: { price: '500,00' } });
         expect(result1).toBe('expensive');
@@ -341,24 +358,261 @@ describe('handlebars-helper-spreadsheet-calc', () => {
       });
 
       it('should handle mixed manual and automatic coercion', () => {
-        const template = Handlebars.compile('{{calc "+europeanPrice + usPrice + automaticPrice"}}');
+        const template = Handlebars.compile(
+          '{{calc "+europeanPrice + usPrice + automaticPrice"}}',
+        );
         const result = template({
-          europeanPrice: '1.500,75',  // Manual coercion with +
-          usPrice: 250.25,            // Already a number
-          automaticPrice: '99,99'     // Automatic coercion
+          europeanPrice: '1.500,75', // Manual coercion with +
+          usPrice: 250.25, // Already a number
+          automaticPrice: '99,99', // Automatic coercion
         });
         expect(parseFloat(result)).toBeCloseTo(1850.99, 2);
       });
 
       it('should handle unary plus with nested properties', () => {
-        const template = Handlebars.compile('{{calc "+product.basePrice + product.tax"}}');
+        const template = Handlebars.compile(
+          '{{calc "+product.basePrice + product.tax"}}',
+        );
         const result = template({
           product: {
-            basePrice: '2.999,99',  // Manual coercion
-            tax: '600,00'           // Automatic coercion
-          }
+            basePrice: '2.999,99', // Manual coercion
+            tax: '600,00', // Automatic coercion
+          },
         });
         expect(parseFloat(result)).toBeCloseTo(3599.99, 2);
+      });
+    });
+  });
+
+  describe('date functions', () => {
+    beforeEach(() => {
+      // Set a deterministic date for testing
+      vi.setSystemTime(new Date('2025-09-26T12:00:00Z'));
+    });
+
+    describe('NOW and TODAY', () => {
+      it('should handle NOW with deterministic time', () => {
+        const template = Handlebars.compile('{{calc "NOW()"}}');
+        expect(template({})).toBe('2025-09-26T12:00:00.000Z');
+      });
+
+      it('should handle TODAY with deterministic time', () => {
+        const template = Handlebars.compile('{{calc "TODAY()"}}');
+        expect(template({})).toBe('2025-09-26');
+      });
+
+      it('should handle timezone for TODAY', () => {
+        vi.setSystemTime(new Date('2025-09-26T23:00:00Z'));
+        const template = Handlebars.compile(
+          '{{calc "TODAY(\\"Europe/Helsinki\\")"}}',
+        );
+        expect(template({})).toBe('2025-09-27');
+      });
+
+      it('should handle NOW and TODAY without parameters', () => {
+        const nowTemplate = Handlebars.compile('{{calc "NOW()"}}');
+        const todayTemplate = Handlebars.compile('{{calc "TODAY()"}}');
+
+        expect(nowTemplate({})).toBe('2025-09-26T12:00:00.000Z');
+        expect(todayTemplate({})).toBe('2025-09-26');
+      });
+    });
+
+    describe('DATEADD', () => {
+      it('should add days to a date', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(startDate, daysToAdd, \\"days\\")"}}',
+        );
+        const result = template({
+          startDate: '2025-09-26',
+          daysToAdd: 14,
+        });
+        expect(result).toBe('2025-10-10');
+      });
+
+      it('should add months to a date', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(date, value, \\"months\\")"}}',
+        );
+        const result = template({
+          date: '2025-09-26',
+          value: 2,
+        });
+        expect(result).toBe('2025-11-26');
+      });
+
+      it('should subtract years from a date', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(date, yearsBack, \\"years\\")"}}',
+        );
+        const result = template({
+          date: '2025-09-26',
+          yearsBack: -1,
+        });
+        expect(result).toBe('2024-09-26');
+      });
+
+      it('should handle datetime inputs', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(datetime, hours, \\"hours\\")"}}',
+        );
+        const result = template({
+          datetime: '2025-09-26T12:00:00Z',
+          hours: 2,
+        });
+        expect(result).toBe('2025-09-26T14:00:00.000Z');
+      });
+    });
+
+    describe('DATEDIFF', () => {
+      it('should calculate difference in days', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(startDate, endDate, \\"days\\")"}}',
+        );
+        const result = template({
+          startDate: '2025-09-26',
+          endDate: '2025-10-10',
+        });
+        expect(result).toBe('14');
+      });
+
+      it('should calculate difference in months', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"months\\")"}}',
+        );
+        const result = template({
+          start: '2025-01-01',
+          end: '2025-03-01',
+        });
+        expect(result).toBe('2');
+      });
+
+      it('should handle negative differences', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(laterDate, earlierDate, \\"days\\")"}}',
+        );
+        const result = template({
+          laterDate: '2025-10-10',
+          earlierDate: '2025-09-26',
+        });
+        expect(result).toBe('-14');
+      });
+    });
+
+    describe('Component extraction', () => {
+      it('should extract YEAR', () => {
+        const template = Handlebars.compile('{{calc "YEAR(date)"}}');
+        const result = template({ date: '2025-09-26' });
+        expect(result).toBe('2025');
+      });
+
+      it('should extract MONTH', () => {
+        const template = Handlebars.compile('{{calc "MONTH(date)"}}');
+        const result = template({ date: '2025-09-26' });
+        expect(result).toBe('9');
+      });
+
+      it('should extract DAY', () => {
+        const template = Handlebars.compile('{{calc "DAY(date)"}}');
+        const result = template({ date: '2025-09-26' });
+        expect(result).toBe('26');
+      });
+
+      it('should extract HOUR from datetime', () => {
+        const template = Handlebars.compile('{{calc "HOUR(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:45Z' });
+        expect(result).toBe('14');
+      });
+
+      it('should extract MINUTE from datetime', () => {
+        const template = Handlebars.compile('{{calc "MINUTE(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:45Z' });
+        expect(result).toBe('30');
+      });
+
+      it('should extract SECOND from datetime', () => {
+        const template = Handlebars.compile('{{calc "SECOND(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:45Z' });
+        expect(result).toBe('45');
+      });
+    });
+
+    describe('WEEKDAY', () => {
+      it('should return ISO weekday by default (Monday=1)', () => {
+        // 2025-09-28 is a Sunday
+        const template = Handlebars.compile('{{calc "WEEKDAY(date)"}}');
+        const result = template({ date: '2025-09-28' });
+        expect(result).toBe('7');
+      });
+
+      it('should handle Excel convention (Sunday=1)', () => {
+        // 2025-09-28 is a Sunday
+        const template = Handlebars.compile('{{calc "WEEKDAY(date, 1)"}}');
+        const result = template({ date: '2025-09-28' });
+        expect(result).toBe('1');
+      });
+
+      it('should handle Monday=0 convention', () => {
+        // 2025-09-29 is a Monday
+        const template = Handlebars.compile('{{calc "WEEKDAY(date, 3)"}}');
+        const result = template({ date: '2025-09-29' });
+        expect(result).toBe('0');
+      });
+    });
+
+    describe('WEEKNUM', () => {
+      it('should return ISO week number', () => {
+        const template = Handlebars.compile('{{calc "WEEKNUM(date)"}}');
+        const result = template({ date: '2025-01-06' });
+        expect(result).toBe('2');
+      });
+
+      it('should handle different week numbering types', () => {
+        const template = Handlebars.compile(
+          '{{calc "WEEKNUM(date, \\"ISO\\")"}}',
+        );
+        const result = template({ date: '2025-01-06' });
+        expect(result).toBe('2');
+      });
+    });
+
+    describe('error handling', () => {
+      it('should throw error for invalid dates', () => {
+        const template = Handlebars.compile('{{calc "YEAR(invalidDate)"}}');
+        expect(() => template({ invalidDate: 'invalid' })).toThrow();
+      });
+
+      it('should throw error for invalid units', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(date, value, \\"invalid\\")"}}',
+        );
+        expect(() => template({ date: '2025-09-26', value: 1 })).toThrow();
+      });
+    });
+
+    describe('real-world examples', () => {
+      it('should calculate age in years', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(birthdate, TODAY(), \\"years\\")"}}',
+        );
+        const result = template({ birthdate: '1990-09-26' });
+        expect(result).toBe('35');
+      });
+
+      it('should calculate days until deadline', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(TODAY(), deadline, \\"days\\")"}}',
+        );
+        const result = template({ deadline: '2025-10-10' });
+        expect(result).toBe('14');
+      });
+
+      it('should get end of current month', () => {
+        vi.setSystemTime(new Date('2025-09-15T00:00:00Z'));
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(DATEADD(TODAY(), 1, \\"months\\"), -DAY(DATEADD(TODAY(), 1, \\"months\\")), \\"days\\")"}}',
+        );
+        expect(template({})).toBe('2025-09-30');
       });
     });
   });

@@ -1,9 +1,10 @@
 import { Parser } from 'expr-eval';
 import numbro from 'numbro';
-import deDE from 'numbro/languages/de-DE';
+import lang from 'numbro/languages/de-DE';
+import { dateFunctions } from './date-functions';
 
-// Configure numbro for European number formats
-numbro.registerLanguage(deDE);
+// Configure numbro support European number formats
+numbro.registerLanguage(lang);
 numbro.setLanguage('de-DE');
 
 interface HandlebarsHelperOptions {
@@ -115,11 +116,11 @@ function calc(
       return new Proxy(obj, {
         get(target, prop: string | symbol) {
           const value = target[prop as any];
-          if (typeof prop === 'string' && !isNaN(Number(prop))) {
+          if (typeof prop === 'string' && !Number.isNaN(Number(prop))) {
             return createNormalizingProxy(value);
           }
           return value;
-        }
+        },
       });
     }
 
@@ -130,7 +131,7 @@ function calc(
           return createNormalizingProxy(value);
         }
         return target[prop as string];
-      }
+      },
     });
   };
 
@@ -140,6 +141,7 @@ function calc(
     createNormalizingProxy(this || {}),
     createNormalizingProxy(options?.hash || {}),
     FX,
+    dateFunctions,
     { undefined: undefined },
   );
 

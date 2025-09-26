@@ -31,7 +31,8 @@
   "main": "index.js",
   "types": "index.d.ts",
   "dependencies": {
-    "expr-eval": "^2.0.2"
+    "expr-eval": "^2.0.2",
+    "numbro": "^2.5.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.4",
@@ -44,7 +45,7 @@
     "build": "tsc",
     "watch-build": "tsc -w",
     "prepare": "npm run build",
-    "test": "vitest",
+    "test": "vitest run",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write ."

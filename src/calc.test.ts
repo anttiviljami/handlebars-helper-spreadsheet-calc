@@ -181,6 +181,188 @@ describe('handlebars-helper-spreadsheet-calc', () => {
     });
   });
 
+  describe('international number formats', () => {
+    describe('European format (comma decimal, dot/space thousand)', () => {
+      it('should handle European decimal format in context variables', () => {
+        const template = Handlebars.compile('{{calc "price * qty"}}');
+        const result = template({ price: '10,99', qty: 3 });
+        expect(result).toBe('32.97');
+      });
+
+      it('should handle European thousand separators with dots', () => {
+        const template = Handlebars.compile('{{calc "price + fee"}}');
+        const result = template({ price: '1.234,56', fee: '500,44' });
+        expect(result).toBe('1735');
+      });
+
+      it('should handle European thousand separators with spaces', () => {
+        const template = Handlebars.compile('{{calc "total * rate"}}');
+        const result = template({ total: '12 345,67', rate: '1,1' });
+        expect(parseFloat(result)).toBeCloseTo(13580.237, 2);
+      });
+
+      it('should handle large European numbers', () => {
+        const template = Handlebars.compile('{{calc "amount / 1000"}}');
+        const result = template({ amount: '1.234.567,89' });
+        expect(parseFloat(result)).toBeCloseTo(1234.56789, 5);
+      });
+    });
+
+    describe('spreadsheet functions with international formats', () => {
+      it('should work with SUM function', () => {
+        const template = Handlebars.compile('{{calc "SUM(a, b, c)"}}');
+        const result = template({
+          a: '1.234,56',
+          b: '2 345,67',
+          c: '3.456,78'
+        });
+        expect(result).toBe('7037.01');
+      });
+
+      it('should work with AVERAGE function', () => {
+        const template = Handlebars.compile('{{calc "AVERAGE(price1, price2, price3)"}}');
+        const result = template({
+          price1: '100,50',
+          price2: '200,75',
+          price3: '150,25'
+        });
+        expect(result).toBe('150.5');
+      });
+
+      it('should work with MAX function', () => {
+        const template = Handlebars.compile('{{calc "MAX(val1, val2, val3)"}}');
+        const result = template({
+          val1: '1.234,56',
+          val2: '2 345,67',
+          val3: '1.000,00'
+        });
+        expect(result).toBe('2345.67');
+      });
+    });
+
+    describe('edge cases', () => {
+      it('should handle plain integers as strings', () => {
+        const template = Handlebars.compile('{{calc "count * 2"}}');
+        const result = template({ count: '5' });
+        expect(result).toBe('10');
+      });
+
+      it('should handle already parsed numbers', () => {
+        const template = Handlebars.compile('{{calc "price * qty"}}');
+        const result = template({ price: 10.99, qty: 3 });
+        expect(result).toBe('32.97');
+      });
+
+      it('should handle mixed number types', () => {
+        const template = Handlebars.compile('{{calc "a + b + c"}}');
+        const result = template({ a: '1.234,56', b: 1000, c: '500' });
+        expect(result).toBe('2734.56');
+      });
+    });
+
+    describe('nested variables', () => {
+      it('should handle international numbers in nested object properties', () => {
+        const template = Handlebars.compile('{{#with product}}{{calc "price * quantity"}}{{/with}}');
+        const result = template({
+          product: {
+            price: '1.299,99',
+            quantity: 3
+          }
+        });
+        expect(parseFloat(result)).toBeCloseTo(3899.97, 2);
+      });
+
+      it('should handle deeply nested international numbers', () => {
+        const template = Handlebars.compile('{{calc "order.items[0].price + order.items[0].tax"}}');
+        const result = template({
+          order: {
+            items: [{
+              price: '2.450,80',
+              tax: '490,16'
+            }]
+          }
+        });
+        expect(parseFloat(result)).toBeCloseTo(2940.96, 2);
+      });
+
+      it('should handle international numbers with each helper', () => {
+        const template = Handlebars.compile('{{#each items}}{{calc "price * qty"}},{{/each}}');
+        const result = template({
+          items: [
+            { price: '10,50', qty: 2 },
+            { price: '25,75', qty: 1 },
+            { price: '1.500,00', qty: 3 }
+          ]
+        });
+        const values = result.split(',').filter(v => v).map(v => parseFloat(v));
+        expect(values[0]).toBeCloseTo(21, 1);
+        expect(values[1]).toBeCloseTo(25.75, 2);
+        expect(values[2]).toBeCloseTo(4500, 1);
+      });
+
+      it('should handle international numbers in array access', () => {
+        const template = Handlebars.compile('{{calc "prices[0] + prices[1]"}}');
+        const result = template({
+          prices: ['1.234,56', '2.345,67']
+        });
+        expect(parseFloat(result)).toBeCloseTo(3580.23, 2);
+      });
+
+      it('should handle mixed nested and flat international numbers', () => {
+        const template = Handlebars.compile('{{calc "basePrice + order.shipping + order.tax"}}');
+        const result = template({
+          basePrice: '1.000,00',
+          order: {
+            shipping: '150,50',
+            tax: '200,10'
+          }
+        });
+        expect(parseFloat(result)).toBeCloseTo(1350.6, 2);
+      });
+
+      it('should handle international numbers with complex handlebars expressions', () => {
+        const template = Handlebars.compile('{{#if (calc "product.price > 1000")}}expensive{{else}}affordable{{/if}}');
+        const result1 = template({ product: { price: '1.500,00' } });
+        const result2 = template({ product: { price: '500,00' } });
+        expect(result1).toBe('expensive');
+        expect(result2).toBe('affordable');
+      });
+
+      it('should convert international number using unary plus operator only', () => {
+        const template = Handlebars.compile('{{calc "+price"}}');
+        const result = template({ price: '1.234,56' });
+        expect(result).toBe('1234.56');
+      });
+
+      it('should handle manual coercion using unary plus operator', () => {
+        const template = Handlebars.compile('{{calc "+priceStr * qty"}}');
+        const result = template({ priceStr: '1.234,56', qty: 2 });
+        expect(parseFloat(result)).toBeCloseTo(2469.12, 2);
+      });
+
+      it('should handle mixed manual and automatic coercion', () => {
+        const template = Handlebars.compile('{{calc "+europeanPrice + usPrice + automaticPrice"}}');
+        const result = template({
+          europeanPrice: '1.500,75',  // Manual coercion with +
+          usPrice: 250.25,            // Already a number
+          automaticPrice: '99,99'     // Automatic coercion
+        });
+        expect(parseFloat(result)).toBeCloseTo(1850.99, 2);
+      });
+
+      it('should handle unary plus with nested properties', () => {
+        const template = Handlebars.compile('{{calc "+product.basePrice + product.tax"}}');
+        const result = template({
+          product: {
+            basePrice: '2.999,99',  // Manual coercion
+            tax: '600,00'           // Automatic coercion
+          }
+        });
+        expect(parseFloat(result)).toBeCloseTo(3599.99, 2);
+      });
+    });
+  });
+
   describe('README examples', () => {
     it('should handle all README examples correctly', () => {
       const context = {

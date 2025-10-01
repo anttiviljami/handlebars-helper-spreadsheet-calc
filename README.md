@@ -70,7 +70,14 @@ Handlebars.registerHelper("calc", calc);
 
 ### Date functions
 
-All date functions work with ISO 8601 date strings (e.g., "2025-09-26" or "2025-09-26T12:00:00Z") and use UTC by default with optional timezone support.
+All date functions accept dates in multiple formats and automatically parse them:
+- **ISO 8601**: "2025-09-26" or "2025-09-26T12:00:00Z"
+- **German format**: "30.09.2025" or "30.09.2025 11:34"
+- **European format**: "30/09/2025" or "30/09/2025 11:34"
+- **US format**: "09/30/2025" or "09/30/2025 11:34"
+- **Asian format**: "2025/09/30" or "2025/09/30 11:34"
+
+All functions return dates in ISO format and use UTC by default with optional timezone support.
 
 #### Current time
 - `NOW([timezone])` - Returns the current date and time in ISO format (e.g., "2025-09-26T12:00:00.000Z")
@@ -116,4 +123,11 @@ Overdue: {{ calc "DATEDIFF(invoice.dueDate, TODAY(), \"days\") < 0" }}
 
 <!-- Timezone handling -->
 Local date: {{ calc "TODAY(\"Europe/Helsinki\")" }}
+
+<!-- Working with non-ISO formats -->
+<!-- German date: 30.09.2025 11:34 -->
+Days until: {{ calc "DATEDIFF(TODAY(), germanDate, \"days\")" }}
+
+<!-- Mixed formats work seamlessly -->
+{{ calc "DATEDIFF(\"30.09.2025\", \"2025-10-05\", \"days\")" }} <!-- Returns: 5 -->
 ```

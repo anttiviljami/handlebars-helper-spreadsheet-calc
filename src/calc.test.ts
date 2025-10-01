@@ -462,6 +462,76 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         });
         expect(result).toBe('2025-09-26T14:00:00.000Z');
       });
+
+      it('should add hours to datetime string', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 3, \\"hours\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:00.000Z',
+        });
+        expect(result).toBe('2025-09-26T13:30:00.000Z');
+      });
+
+      it('should add minutes to datetime string', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 45, \\"minutes\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:00Z',
+        });
+        expect(result).toBe('2025-09-26T11:15:00.000Z');
+      });
+
+      it('should add seconds to datetime string', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 30, \\"seconds\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:00Z',
+        });
+        expect(result).toBe('2025-09-26T10:30:30.000Z');
+      });
+
+      it('should handle datetime with milliseconds', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 2, \\"hours\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:45.123Z',
+        });
+        expect(result).toBe('2025-09-26T12:30:45.123Z');
+      });
+
+      it('should preserve datetime format when adding days', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 5, \\"days\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T15:45:30Z',
+        });
+        expect(result).toBe('2025-10-01T15:45:30.000Z');
+      });
+
+      it('should handle datetime with timezone offset', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 1, \\"days\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:00+03:00',
+        });
+        expect(result).toBe('2025-09-27T07:30:00.000Z');
+      });
+
+      it('should handle negative values with datetime', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, -2, \\"hours\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T10:30:00Z',
+        });
+        expect(result).toBe('2025-09-26T08:30:00.000Z');
+      });
     });
 
     describe('DATEDIFF', () => {
@@ -497,25 +567,131 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         });
         expect(result).toBe('-14');
       });
+
+      it('should calculate difference in hours between datetime strings', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"hours\\")"}}',
+        );
+        const result = template({
+          start: '2025-09-26T10:00:00Z',
+          end: '2025-09-26T15:30:00Z',
+        });
+        expect(result).toBe('5');
+      });
+
+      it('should calculate difference in minutes between datetime strings', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"minutes\\")"}}',
+        );
+        const result = template({
+          start: '2025-09-26T10:00:00Z',
+          end: '2025-09-26T10:45:00Z',
+        });
+        expect(result).toBe('45');
+      });
+
+      it('should calculate difference in seconds between datetime strings', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"seconds\\")"}}',
+        );
+        const result = template({
+          start: '2025-09-26T10:00:00Z',
+          end: '2025-09-26T10:00:30Z',
+        });
+        expect(result).toBe('30');
+      });
+
+      it('should handle datetime with milliseconds', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"seconds\\")"}}',
+        );
+        const result = template({
+          start: '2025-09-26T10:00:00.123Z',
+          end: '2025-09-26T10:00:05.456Z',
+        });
+        expect(result).toBe('5');
+      });
+
+      it('should calculate days between datetime strings', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(start, end, \\"days\\")"}}',
+        );
+        const result = template({
+          start: '2025-09-26T10:30:00Z',
+          end: '2025-09-28T15:45:00Z',
+        });
+        expect(result).toBe('2');
+      });
+
+      it('should handle mixed date and datetime formats', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(date, datetime, \\"hours\\")"}}',
+        );
+        const result = template({
+          date: '2025-09-26',
+          datetime: '2025-09-26T15:30:00Z',
+        });
+        expect(result).toBe('15');
+      });
+
+      it('should handle datetime with timezone offsets', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(dt1, dt2, \\"hours\\")"}}',
+        );
+        const result = template({
+          dt1: '2025-09-26T10:00:00+03:00',
+          dt2: '2025-09-26T10:00:00Z',
+        });
+        expect(result).toBe('3');
+      });
+
+      it('should handle negative differences with datetime', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(later, earlier, \\"hours\\")"}}',
+        );
+        const result = template({
+          later: '2025-09-26T15:00:00Z',
+          earlier: '2025-09-26T10:00:00Z',
+        });
+        expect(result).toBe('-5');
+      });
     });
 
     describe('Component extraction', () => {
-      it('should extract YEAR', () => {
+      it('should extract YEAR from date', () => {
         const template = Handlebars.compile('{{calc "YEAR(date)"}}');
         const result = template({ date: '2025-09-26' });
         expect(result).toBe('2025');
       });
 
-      it('should extract MONTH', () => {
+      it('should extract YEAR from datetime', () => {
+        const template = Handlebars.compile('{{calc "YEAR(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:45Z' });
+        expect(result).toBe('2025');
+      });
+
+      it('should extract MONTH from date', () => {
         const template = Handlebars.compile('{{calc "MONTH(date)"}}');
         const result = template({ date: '2025-09-26' });
         expect(result).toBe('9');
       });
 
-      it('should extract DAY', () => {
+      it('should extract MONTH from datetime', () => {
+        const template = Handlebars.compile('{{calc "MONTH(datetime)"}}');
+        const result = template({ datetime: '2025-12-26T14:30:45Z' });
+        expect(result).toBe('12');
+      });
+
+      it('should extract DAY from date', () => {
         const template = Handlebars.compile('{{calc "DAY(date)"}}');
         const result = template({ date: '2025-09-26' });
         expect(result).toBe('26');
+      });
+
+      it('should extract DAY from datetime', () => {
+        const template = Handlebars.compile('{{calc "DAY(datetime)"}}');
+        const result = template({ datetime: '2025-09-15T14:30:45Z' });
+        expect(result).toBe('15');
       });
 
       it('should extract HOUR from datetime', () => {
@@ -524,16 +700,58 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         expect(result).toBe('14');
       });
 
+      it('should extract HOUR from datetime with milliseconds', () => {
+        const template = Handlebars.compile('{{calc "HOUR(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T09:30:45.123Z' });
+        expect(result).toBe('9');
+      });
+
       it('should extract MINUTE from datetime', () => {
         const template = Handlebars.compile('{{calc "MINUTE(datetime)"}}');
         const result = template({ datetime: '2025-09-26T14:30:45Z' });
         expect(result).toBe('30');
       });
 
+      it('should extract MINUTE from datetime with milliseconds', () => {
+        const template = Handlebars.compile('{{calc "MINUTE(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:05:45.123Z' });
+        expect(result).toBe('5');
+      });
+
       it('should extract SECOND from datetime', () => {
         const template = Handlebars.compile('{{calc "SECOND(datetime)"}}');
         const result = template({ datetime: '2025-09-26T14:30:45Z' });
         expect(result).toBe('45');
+      });
+
+      it('should extract SECOND from datetime with milliseconds', () => {
+        const template = Handlebars.compile('{{calc "SECOND(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:08.123Z' });
+        expect(result).toBe('8');
+      });
+
+      it('should handle datetime with timezone offset for extraction', () => {
+        const template = Handlebars.compile('{{calc "HOUR(datetime)"}}');
+        const result = template({ datetime: '2025-09-26T14:30:45+03:00' });
+        expect(result).toBe('11');
+      });
+
+      it('should extract components from mixed formats', () => {
+        const yearTemplate = Handlebars.compile('{{calc "YEAR(dt)"}}');
+        const monthTemplate = Handlebars.compile('{{calc "MONTH(dt)"}}');
+        const dayTemplate = Handlebars.compile('{{calc "DAY(dt)"}}');
+
+        const dateContext = { dt: '2025-06-15' };
+        const datetimeContext = { dt: '2025-06-15T10:30:00Z' };
+
+        expect(yearTemplate(dateContext)).toBe('2025');
+        expect(yearTemplate(datetimeContext)).toBe('2025');
+
+        expect(monthTemplate(dateContext)).toBe('6');
+        expect(monthTemplate(datetimeContext)).toBe('6');
+
+        expect(dayTemplate(dateContext)).toBe('15');
+        expect(dayTemplate(datetimeContext)).toBe('15');
       });
     });
 
@@ -558,6 +776,26 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         const result = template({ date: '2025-09-29' });
         expect(result).toBe('0');
       });
+
+      it('should handle datetime strings', () => {
+        // 2025-09-28 is a Sunday
+        const template = Handlebars.compile('{{calc "WEEKDAY(datetime)"}}');
+        const result = template({ datetime: '2025-09-28T10:30:00Z' });
+        expect(result).toBe('7');
+      });
+
+      it('should handle datetime with different conventions', () => {
+        // 2025-09-29 is a Monday
+        const template1 = Handlebars.compile('{{calc "WEEKDAY(dt, 1)"}}');
+        const template2 = Handlebars.compile('{{calc "WEEKDAY(dt, 2)"}}');
+        const template3 = Handlebars.compile('{{calc "WEEKDAY(dt, 3)"}}');
+
+        const context = { dt: '2025-09-29T15:45:00Z' };
+
+        expect(template1(context)).toBe('2'); // Excel: Monday = 2
+        expect(template2(context)).toBe('1'); // ISO: Monday = 1
+        expect(template3(context)).toBe('0'); // Monday = 0
+      });
     });
 
     describe('WEEKNUM', () => {
@@ -574,6 +812,159 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         const result = template({ date: '2025-01-06' });
         expect(result).toBe('2');
       });
+
+      it('should handle datetime strings', () => {
+        const template = Handlebars.compile('{{calc "WEEKNUM(datetime)"}}');
+        const result = template({ datetime: '2025-01-06T10:30:00Z' });
+        expect(result).toBe('2');
+      });
+
+      it('should handle datetime with timezone', () => {
+        const template = Handlebars.compile('{{calc "WEEKNUM(dt, 2)"}}');
+        const result = template({ dt: '2025-01-06T10:30:00+02:00' });
+        expect(result).toBe('2');
+      });
+    });
+
+    describe('non-standard date format parsing', () => {
+      describe('German format (DD.MM.YYYY)', () => {
+        it('should parse German date format', () => {
+          const template = Handlebars.compile('{{calc "YEAR(date)"}}');
+          const result = template({ date: '30.09.2025' });
+          expect(result).toBe('2025');
+        });
+
+        it('should parse German datetime format', () => {
+          const template = Handlebars.compile('{{calc "HOUR(datetime)"}}');
+          const result = template({ datetime: '30.09.2025 11:34' });
+          expect(result).toBe('11');
+        });
+
+        it('should parse German datetime with seconds', () => {
+          const template = Handlebars.compile('{{calc "SECOND(datetime)"}}');
+          const result = template({ datetime: '30.09.2025 11:34:56' });
+          expect(result).toBe('56');
+        });
+
+        it('should add days to German date', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEADD(date, 5, \\"days\\")"}}',
+          );
+          const result = template({ date: '30.09.2025' });
+          expect(result).toBe('2025-10-05');
+        });
+
+        it('should add hours to German datetime', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEADD(datetime, 2, \\"hours\\")"}}',
+          );
+          const result = template({ datetime: '30.09.2025 11:34' });
+          expect(result).toBe('2025-09-30T13:34:00.000Z');
+        });
+
+        it('should calculate difference between German dates', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEDIFF(start, end, \\"days\\")"}}',
+          );
+          const result = template({
+            start: '25.09.2025',
+            end: '30.09.2025',
+          });
+          expect(result).toBe('5');
+        });
+
+        it('should handle mixed German and ISO formats', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEDIFF(germanDate, isoDate, \\"days\\")"}}',
+          );
+          const result = template({
+            germanDate: '25.09.2025',
+            isoDate: '2025-09-30',
+          });
+          expect(result).toBe('5');
+        });
+      });
+
+      describe('European format with slashes (DD/MM/YYYY)', () => {
+        it('should parse European date format', () => {
+          const template = Handlebars.compile('{{calc "MONTH(date)"}}');
+          const result = template({ date: '15/06/2025' });
+          expect(result).toBe('6');
+        });
+
+        it('should parse European datetime format', () => {
+          const template = Handlebars.compile('{{calc "MINUTE(datetime)"}}');
+          const result = template({ datetime: '15/06/2025 14:30' });
+          expect(result).toBe('30');
+        });
+
+        it('should add months to European date', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEADD(date, 2, \\"months\\")"}}',
+          );
+          const result = template({ date: '15/06/2025' });
+          expect(result).toBe('2025-08-15');
+        });
+      });
+
+      describe('US format (MM/DD/YYYY)', () => {
+        it('should parse US date format when day > 12', () => {
+          const template = Handlebars.compile('{{calc "DAY(date)"}}');
+          const result = template({ date: '06/15/2025' });
+          expect(result).toBe('15');
+        });
+
+        it('should parse US datetime format', () => {
+          const template = Handlebars.compile('{{calc "MONTH(datetime)"}}');
+          const result = template({ datetime: '06/15/2025 10:30' });
+          expect(result).toBe('6');
+        });
+      });
+
+      describe('Asian format (YYYY/MM/DD)', () => {
+        it('should parse Asian date format', () => {
+          const template = Handlebars.compile('{{calc "DAY(date)"}}');
+          const result = template({ date: '2025/09/30' });
+          expect(result).toBe('30');
+        });
+
+        it('should parse Asian datetime format', () => {
+          const template = Handlebars.compile('{{calc "HOUR(datetime)"}}');
+          const result = template({ datetime: '2025/09/30 15:45' });
+          expect(result).toBe('15');
+        });
+      });
+
+      describe('real-world epilot examples', () => {
+        it('should handle epilot German datetime in calculations', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEDIFF(created, updated, \\"hours\\")"}}',
+          );
+          const result = template({
+            created: '30.09.2025 11:34',
+            updated: '30.09.2025 15:45',
+          });
+          expect(result).toBe('4');
+        });
+
+        it('should add business days to German date', () => {
+          const template = Handlebars.compile(
+            '{{calc "DATEADD(startDate, 7, \\"days\\")"}}',
+          );
+          const result = template({
+            startDate: '30.09.2025',
+          });
+          expect(result).toBe('2025-10-07');
+        });
+
+        it('should extract year from epilot datetime', () => {
+          const template = Handlebars.compile('{{calc "YEAR(createdAt)"}}');
+          const result = template({
+            createdAt: '15.03.2024 09:30:45',
+          });
+          expect(result).toBe('2024');
+        });
+      });
     });
 
     describe('error handling', () => {
@@ -587,6 +978,48 @@ describe('handlebars-helper-spreadsheet-calc', () => {
           '{{calc "DATEADD(date, value, \\"invalid\\")"}}',
         );
         expect(() => template({ date: '2025-09-26', value: 1 })).toThrow();
+      });
+    });
+
+    describe('timezone handling with datetime strings', () => {
+      it('should handle timezone in NOW function', () => {
+        const utcTemplate = Handlebars.compile('{{calc "NOW()"}}');
+        const tokyoTemplate = Handlebars.compile('{{calc "NOW(\\"Asia/Tokyo\\")"}}');
+
+        const utcResult = utcTemplate({});
+        const tokyoResult = tokyoTemplate({});
+
+        expect(utcResult).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(tokyoResult).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+09:00$/);
+      });
+
+      it('should handle timezone conversion in datetime operations', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(dt, 1, \\"days\\", \\"Europe/London\\")"}}',
+        );
+        const result = template({
+          dt: '2025-09-26T23:00:00Z',
+        });
+        expect(result).toMatch(/2025-09-28T00:00:00/);
+      });
+
+      it('should calculate time differences across timezones', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(utcTime, localTime, \\"hours\\")"}}',
+        );
+        const result = template({
+          utcTime: '2025-09-26T12:00:00Z',
+          localTime: '2025-09-26T12:00:00-05:00',
+        });
+        expect(result).toBe('5');
+      });
+
+      it('should extract components with timezone consideration', () => {
+        const hourTemplate = Handlebars.compile('{{calc "HOUR(dt, \\"America/New_York\\")"}}');
+        const result = hourTemplate({
+          dt: '2025-09-26T00:00:00Z'
+        });
+        expect(result).toBe('20'); // 00:00 UTC is 20:00 previous day in NY (EDT)
       });
     });
 
@@ -613,6 +1046,39 @@ describe('handlebars-helper-spreadsheet-calc', () => {
           '{{calc "DATEADD(DATEADD(TODAY(), 1, \\"months\\"), -DAY(DATEADD(TODAY(), 1, \\"months\\")), \\"days\\")"}}',
         );
         expect(template({})).toBe('2025-09-30');
+      });
+
+      it('should calculate business hours between datetimes', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(startTime, endTime, \\"hours\\")"}}',
+        );
+        const result = template({
+          startTime: '2025-09-26T09:00:00Z',
+          endTime: '2025-09-26T17:30:00Z',
+        });
+        expect(result).toBe('8');
+      });
+
+      it('should handle meeting scheduling with datetime', () => {
+        const template = Handlebars.compile(
+          '{{calc "DATEADD(meetingStart, duration, \\"minutes\\")"}}',
+        );
+        const result = template({
+          meetingStart: '2025-09-26T14:00:00Z',
+          duration: 90,
+        });
+        expect(result).toBe('2025-09-26T15:30:00.000Z');
+      });
+
+      it('should calculate time remaining with datetime precision', () => {
+        vi.setSystemTime(new Date('2025-09-26T10:30:00Z'));
+        const template = Handlebars.compile(
+          '{{calc "DATEDIFF(NOW(), eventTime, \\"minutes\\")"}}',
+        );
+        const result = template({
+          eventTime: '2025-09-26T15:00:00Z',
+        });
+        expect(result).toBe('270');
       });
     });
   });

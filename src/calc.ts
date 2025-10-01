@@ -27,6 +27,18 @@ function coerceToNumber(value: any): any {
     // Empty strings stay as empty strings
     if (trimmed === '') return value;
 
+    // Check if it looks like a date pattern (don't convert dates to numbers)
+    const datePatterns = [
+      /^\d{1,2}\.\d{1,2}\.\d{2,4}/,     // German date: DD.MM.YYYY or D.M.YY
+      /^\d{1,2}\/\d{1,2}\/\d{2,4}/,     // US/European date: MM/DD/YYYY or DD/MM/YYYY
+      /^\d{4}[-/]\d{1,2}[-/]\d{1,2}/, // ISO or Asian: YYYY-MM-DD or YYYY/MM/DD
+    ];
+
+    if (datePatterns.some(pattern => pattern.test(trimmed))) {
+      // This looks like a date, don't convert it
+      return value;
+    }
+
     // Check if it looks like a number (contains digits and valid separators)
     if (/^-?[\d\s.,]+$/.test(trimmed)) {
       // Handle space separators manually (numbro doesn't support them in de-DE)

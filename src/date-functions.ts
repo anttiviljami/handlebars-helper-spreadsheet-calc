@@ -15,7 +15,27 @@ function parseDate(value: any, tz?: string): DateTime | null {
       const iso = DateTime.fromISO(value, { zone: tz || 'utc' });
       if (iso.isValid) return iso;
 
-      // If not ISO, don't guess - require explicit parsing
+      // Try common non-ISO formats
+      const formats = [
+        'dd.MM.yyyy HH:mm:ss',  // German with seconds: 30.09.2025 11:34:56
+        'dd.MM.yyyy HH:mm',     // German without seconds: 30.09.2025 11:34
+        'dd.MM.yyyy',           // German date only: 30.09.2025
+        'dd/MM/yyyy HH:mm:ss',  // European with slashes and seconds
+        'dd/MM/yyyy HH:mm',     // European with slashes
+        'dd/MM/yyyy',           // European date only
+        'MM/dd/yyyy HH:mm:ss',  // US format with time and seconds
+        'MM/dd/yyyy HH:mm',     // US format with time
+        'MM/dd/yyyy',           // US date only
+        'yyyy/MM/dd HH:mm:ss',  // Asian format with time and seconds
+        'yyyy/MM/dd HH:mm',     // Asian format with time
+        'yyyy/MM/dd',           // Asian date only
+      ];
+
+      for (const format of formats) {
+        const parsed = DateTime.fromFormat(value, format, { zone: tz || 'utc' });
+        if (parsed.isValid) return parsed;
+      }
+
       return null;
     }
 
@@ -68,9 +88,20 @@ export const dateFunctions: Record<string, SpreadsheetFunction> = {
     const result = dt.plus({ [validatedUnit]: Number(value) });
 
     // Return same "kind" as input - if input was date-only, return date-only
-    const isDateOnly =
-      typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
-    return isDateOnly ? result.toISODate() || '' : result.toISO() || '';
+    if (typeof date === 'string') {
+      // Check if original input was date-only (no time component)
+      const dateOnlyPatterns = [
+        /^\d{4}-\d{2}-\d{2}$/,           // ISO date
+        /^\d{2}\.\d{2}\.\d{4}$/,         // German date
+        /^\d{2}\/\d{2}\/\d{4}$/,         // European/US date
+        /^\d{4}\/\d{2}\/\d{2}$/,         // Asian date
+      ];
+
+      const isDateOnly = dateOnlyPatterns.some(pattern => pattern.test(date));
+      return isDateOnly ? result.toISODate() || '' : result.toISO() || '';
+    }
+
+    return result.toISO() || '';
   },
 
   DATEDIFF: (start: any, end: any, unit: string, tz?: string): number => {

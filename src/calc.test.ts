@@ -984,13 +984,19 @@ describe('handlebars-helper-spreadsheet-calc', () => {
     describe('timezone handling with datetime strings', () => {
       it('should handle timezone in NOW function', () => {
         const utcTemplate = Handlebars.compile('{{calc "NOW()"}}');
-        const tokyoTemplate = Handlebars.compile('{{calc "NOW(\\"Asia/Tokyo\\")"}}');
+        const tokyoTemplate = Handlebars.compile(
+          '{{calc "NOW(\\"Asia/Tokyo\\")"}}',
+        );
 
         const utcResult = utcTemplate({});
         const tokyoResult = tokyoTemplate({});
 
-        expect(utcResult).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
-        expect(tokyoResult).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+09:00$/);
+        expect(utcResult).toMatch(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+        );
+        expect(tokyoResult).toMatch(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}\+09:00$/,
+        );
       });
 
       it('should handle timezone conversion in datetime operations', () => {
@@ -1015,9 +1021,11 @@ describe('handlebars-helper-spreadsheet-calc', () => {
       });
 
       it('should extract components with timezone consideration', () => {
-        const hourTemplate = Handlebars.compile('{{calc "HOUR(dt, \\"America/New_York\\")"}}');
+        const hourTemplate = Handlebars.compile(
+          '{{calc "HOUR(dt, \\"America/New_York\\")"}}',
+        );
         const result = hourTemplate({
-          dt: '2025-09-26T00:00:00Z'
+          dt: '2025-09-26T00:00:00Z',
         });
         expect(result).toBe('20'); // 00:00 UTC is 20:00 previous day in NY (EDT)
       });

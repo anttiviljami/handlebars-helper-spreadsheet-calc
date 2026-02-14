@@ -260,6 +260,35 @@ describe('handlebars-helper-spreadsheet-calc', () => {
         const result = template({ a: '1.234,56', b: 1000, c: '500' });
         expect(result).toBe('2734.56');
       });
+
+      it('should handle US/internal decimal format (dot as decimal separator) from context', () => {
+        // Bug fix: strings like "1.2" should be parsed as 1.2, not 12
+        // This happens when platform stores numbers internally with dot decimal separator
+        const template = Handlebars.compile('{{calc "price * qty"}}');
+        const result = template({ price: '1.2', qty: 10 });
+        expect(result).toBe('12'); // 1.2 * 10 = 12
+      });
+
+      it('should handle US decimal format with multiple decimal places', () => {
+        const template = Handlebars.compile('{{calc "value * 2"}}');
+        const result = template({ value: '1.25' });
+        expect(result).toBe('2.5'); // 1.25 * 2 = 2.5
+      });
+
+      it('should handle US decimal format in arithmetic operations', () => {
+        const template = Handlebars.compile('{{calc "a + b"}}');
+        const result = template({ a: '1.5', b: '2.5' });
+        expect(result).toBe('4'); // 1.5 + 2.5 = 4
+      });
+
+      it('should distinguish between European thousands and US decimals', () => {
+        // "1.234" with exactly 3 digits after dot is ambiguous
+        // but "1.23" (2 digits) or "1.2" (1 digit) should be US decimal
+        const template1 = Handlebars.compile('{{calc "value * 1"}}');
+        expect(template1({ value: '1.2' })).toBe('1.2');
+        expect(template1({ value: '1.23' })).toBe('1.23');
+        expect(template1({ value: '1.234' })).toBe('1.234'); // Could be ambiguous but treat as decimal
+      });
     });
 
     describe('nested variables', () => {

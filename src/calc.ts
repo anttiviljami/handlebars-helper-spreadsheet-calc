@@ -41,6 +41,19 @@ function coerceToNumber(value: any): any {
 
     // Check if it looks like a number (contains digits and valid separators)
     if (/^-?[\d\s.,]+$/.test(trimmed)) {
+      const hasComma = trimmed.includes(',');
+      const dotCount = (trimmed.match(/\./g) || []).length;
+
+      // If no comma and at most one dot, try US/internal decimal format first
+      // This handles cases like "1.2", "1.25", "1.234" which should be decimals
+      // when the platform stores numbers internally with dot as decimal separator
+      if (!hasComma && dotCount <= 1) {
+        const parsed = Number.parseFloat(trimmed);
+        if (!Number.isNaN(parsed)) {
+          return parsed;
+        }
+      }
+
       // Handle space separators manually (numbro doesn't support them in de-DE)
       let normalized = trimmed;
 
@@ -50,6 +63,7 @@ function coerceToNumber(value: any): any {
       }
 
       // Use numbro with German locale for European format support
+      // This handles: "1.234,56", "1,2", "1.234.567,89", etc.
       const result = numbro.unformat(normalized);
       return Number.isNaN(result) ? value : result;
     }
